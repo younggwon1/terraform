@@ -5,7 +5,7 @@ variable "region" {
 
 variable "vpc-name" {
   type    = string
-  default = "vpc-labs"
+  default = "vpc"
 }
 
 variable "vpc-cidr" {
@@ -45,6 +45,13 @@ terraform {
       version = "~> 5.0"
     }
   }
+
+  backend "s3" {
+    bucket = "tf-remote-state"
+    key    = "ap-northeast-2.network.tfstate"
+    region  = var.region
+    encrypt = true
+  }
 }
 
 provider "aws" {
@@ -54,5 +61,14 @@ provider "aws" {
     tags = {
       Terraform = "true"
     }
+  }
+}
+
+data "terraform_remote_state" "network" {
+  backend = "s3"
+  config = {
+    bucket = "tf-remote-state"
+    key    = "ap-northeast-2.network.tfstate"
+    region = var.region
   }
 }
