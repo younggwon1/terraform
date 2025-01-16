@@ -13,9 +13,19 @@ variable "vpc-cidr" {
   default = "10.21.0.0/16"
 }
 
-variable "availability_zone_names" {
+variable "availability-zone-names" {
   type    = list(string)
   default = ["ap-northeast-2a", "ap-northeast-2c"]
+}
+
+variable "public-subnets-names" {
+  type    = list(string)
+  default = ["public-subnet-2a", "public-subnet-2c"]
+}
+
+variable "private-subnets-names" {
+  type    = list(string)
+  default = ["private-subnet-2a", "private-subnet-2c"]
 }
 
 variable "public-subnets-cidr" {
