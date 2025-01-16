@@ -38,6 +38,15 @@ variable "private-subnets-cidr" {
   default = ["10.21.32.0/24", "10.21.33.0/24"]
 }
 
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
 provider "aws" {
   region = var.region
 
