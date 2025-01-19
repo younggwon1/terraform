@@ -5,7 +5,7 @@ resource "aws_lb" "public-alb" {
   security_groups    = [
     aws_security_group.public-alb-sg.id,
   ]
-  subnets            = local.public-subnet-ids
+  subnets            = local.public-subnets-ids
   enable_deletion_protection = true
   
   tags = {
