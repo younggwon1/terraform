@@ -1,8 +1,3 @@
-variable "region" {
-  type    = string
-  default = "ap-northeast-2"
-}
-
 variable "vpc-name" {
   type    = string
   default = "vpc"
@@ -51,26 +46,17 @@ terraform {
   backend "s3" {
     bucket = "tf-remote-state"
     key    = "ap-northeast-2.network.tfstate"
-    region  = var.region
+    region  = "ap-northeast-2"
     encrypt = true
   }
 }
 
 provider "aws" {
-  region = var.region
+  region = "ap-northeast-2"
 
   default_tags {
     tags = {
       Terraform = "true"
     }
-  }
-}
-
-data "terraform_remote_state" "network" {
-  backend = "s3"
-  config = {
-    bucket = "tf-remote-state"
-    key    = "ap-northeast-2.network.tfstate"
-    region = var.region
   }
 }
