@@ -1,8 +1,3 @@
-variable "region" {
-  type    = string
-  default = "ap-northeast-2"
-}
-
 variable "vpc-name" {
   type    = string
   default = "vpc"
@@ -39,36 +34,29 @@ variable "private-subnets-cidr" {
 }
 
 terraform {
+  required_version = ">= 1.3.2"
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 5.83.0"
     }
   }
 
   backend "s3" {
     bucket = "tf-remote-state"
     key    = "ap-northeast-2.network.tfstate"
-    region  = var.region
+    region  = "ap-northeast-2"
     encrypt = true
   }
 }
 
 provider "aws" {
-  region = var.region
+  region = "ap-northeast-2"
 
   default_tags {
     tags = {
       Terraform = "true"
     }
-  }
-}
-
-data "terraform_remote_state" "network" {
-  backend = "s3"
-  config = {
-    bucket = "tf-remote-state"
-    key    = "ap-northeast-2.network.tfstate"
-    region = var.region
   }
 }
