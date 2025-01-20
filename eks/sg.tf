@@ -1,3 +1,6 @@
+# 특정 Security Group을 수동으로 정의하거나, 기본 동작을 오버라이드하고 싶다면 security group을 생성한 후 ingress annotation에 추가합니다.
+# alb.ingress.kubernetes.io/security-groups: <security-group-id-1>,<security-group-id-2>
+
 ## Security Group For Public ALB
 resource "aws_security_group" "public-alb-sg" {
   name        = "public-alb-sg"
