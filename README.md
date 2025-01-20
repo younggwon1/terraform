@@ -35,4 +35,39 @@ One NAT Gateway per availability zone
 ~~~
 
 ### Internet Gateway
+> Internet Gateway를 통해 VPC 내의 리소스가 외부 인터넷과 통신할 수 있도록 create_igw = true 설정을 통해 생성합니다.
 
+---
+
+## EKS 구성
+> 20.31.6 버전의 terraform-aws-modules/eks/aws를 사용하여 EKS를 구성
+
+### EKS
+> Amazon EKS의 관리형 노드는 각각의 Private Subnet에 위치합니다.
+
+### ALB
+> Application Load Balancer는 인터넷으로 접근이 가능하며 구성된 Pod로 라우팅합니다.
+
+> Deployment에 구성될 Pod는 [Spring Boot 이미지](https://spring.io/guides/gs/spring-boot-docker)로 제작하였습니다.
+
+사전 작업으로 클러스터에 [AWS Load Balancer Controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller)를 설치합니다.
+
+- Ingress (ALB)
+- TargetGroupBinding
+
+Service는 기존 방식대로 ClusterIP로 설정하고, Ingress의 annotation alb.ingress.kubernetes.io/target-type 값을 ip로 두면, TargetGroupBinding가 생성된 것을 볼 수 있습니다. TargetGroupBinding은 AWS LoadBalancer의 Target Group를 관리하는 기능입니다.
+~~~
+타겟 타입을 ip로 설정할 경우
+- service.type: ClusterIP 
+- alb.ingress.kubernetes.io/target-type: "ip"
+타겟 타입을 instance로 설정할 경우
+- service.type: NodePort or LoadBalancer
+- alb.ingress.kubernetes.io/target-type: "instance"
+~~~
+
+AWS Load Balancer Controller는 ALB를 생성할 때 Security Group도 자동으로 생성하고 관리합니다.
+
+만약 특정 Security Group을 수동으로 정의하거나, 기본 동작을 오버라이드하고 싶다면 다음과 같이 어노테이션을 사용해 지정할 수 있습니다:
+~~~
+alb.ingress.kubernetes.io/security-groups: <security-group-id-1>,<security-group-id-2>
+~~~
