@@ -67,7 +67,7 @@ Service는 기존 방식대로 ClusterIP로 설정하고, Ingress의 annotation 
 
 AWS Load Balancer Controller는 ALB를 생성할 때 Security Group도 자동으로 생성하고 관리합니다.
 
-만약 특정 Security Group을 수동으로 정의하거나, 기본 동작을 오버라이드하고 싶다면 다음과 같이 어노테이션을 사용해 지정할 수 있습니다:
+만약 특정 Security Group을 수동으로 정의하거나, 기본 동작을 오버라이드하고 싶다면 다음과 같이 어노테이션을 사용해 지정할 수 있습니다.
 ~~~
 alb.ingress.kubernetes.io/security-groups: <security-group-id-1>,<security-group-id-2>
 ~~~
