@@ -76,8 +76,8 @@ resource "aws_instance" "ec2" {
 
 ## IAM Role
 resource "aws_iam_role" "ec2" {
-  name               = "${var.name_prefix}-ec2-iam-role"
-  assume_role_policy = data.aws_iam_policy_document.ec2_assume_role.json
+  name_prefix               = "${var.name_prefix}-ec2-iam-role-"
+  assume_role_policy        = data.aws_iam_policy_document.ec2_assume_role.json
 }
 
 data "aws_iam_policy_document" "ec2_assume_role" {
@@ -101,14 +101,14 @@ resource "aws_iam_role_policy_attachment" "ec2_cloudwatch" {
 }
 
 resource "aws_iam_instance_profile" "ec2_instance_profile" {
-  name = "${var.name_prefix}-ec2-instance-profile"
-  role = aws_iam_role.ec2.name
+  name_prefix = "${var.name_prefix}-ec2-instance-profile"
+  role        = aws_iam_role.ec2.name
 }
 
 ## Security Group
 resource "aws_security_group" "ec2_security_group" {
-  name   = "${var.name_prefix}-ec2-security-group"
-  vpc_id = var.vpc_id
+  name_prefix   = "${var.name_prefix}-ec2-security-group"
+  vpc_id        = var.vpc_id
 
   ingress {
     description     = "Allow ingress traffic from ALB on HTTP on 80 ports"
@@ -127,8 +127,8 @@ resource "aws_security_group" "ec2_security_group" {
 }
 
 resource "aws_security_group" "alb_security_group" {
-  name   = "${var.name_prefix}-alb-security-group"
-  vpc_id = var.vpc_id
+  name_prefix   = "${var.name_prefix}-alb-security-group"
+  vpc_id        = var.vpc_id
 
   ingress {
     from_port   = 80
