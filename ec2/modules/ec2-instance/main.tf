@@ -101,7 +101,7 @@ resource "aws_iam_role_policy_attachment" "ec2_cloudwatch" {
 }
 
 resource "aws_iam_instance_profile" "ec2_instance_profile" {
-  name_prefix = "${var.name_prefix}-ec2-instance-profile"
+  name_prefix = "${var.name_prefix}-ec2-instance-profile-"
   role        = aws_iam_role.ec2.name
 }
 
