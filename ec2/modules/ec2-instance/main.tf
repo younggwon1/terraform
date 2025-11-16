@@ -12,12 +12,17 @@ locals {
 }
 
 data "aws_ami" "ec2" {
-  most_recent = false
+  most_recent = true
   owners      = ["amazon"]
 
   filter {
     name   = "name"
-    values = ["al2023-ami-2023.0.20230222.1-kernel-6.1-x86_64"]
+    values = ["al2023-ami-*-kernel-6.1-x86_64"]
+  }
+
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
   }
 }
 
