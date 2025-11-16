@@ -1,17 +1,17 @@
 ## VPC
-output "vpc-id" {
+output "vpc_id" {
   description = "The ID of the VPC"
   value       = module.vpc.vpc_id
 }
 
 ## Public Subnet
-output "public-subnets-ids" {
+output "public_subnets_ids" {
   description = "List of IDs of public subnets"
   value       = module.vpc.public_subnets.IDs
 }
 
 ## Private Subnet
-output "private-subnets-ids" {
+output "private_subnets_ids" {
   description = "List of IDs of private subnets"
   value       = module.vpc.private_subnets.IDs
 }
