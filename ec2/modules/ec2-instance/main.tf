@@ -182,6 +182,8 @@ resource "aws_lb_target_group" "ec2_alb_target_group_80" {
     protocol            = "HTTP"
     healthy_threshold   = 3
     unhealthy_threshold = 2
+    interval            = 30
+    timeout             = 5
     matcher             = "200-399"
   }
 
@@ -189,12 +191,6 @@ resource "aws_lb_target_group" "ec2_alb_target_group_80" {
     Name = "${var.name_prefix}-target-group-80"
     Team = var.team
   }
-}
-
-resource "aws_lb_target_group_attachment" "ec2_attachment_80" {
-  target_group_arn = aws_lb_target_group.ec2_alb_target_group_80.arn
-  target_id        = aws_instance.ec2.id
-  port             = 80
 }
 
 resource "aws_lb_listener" "ec2_alb_listener_80" {
@@ -213,33 +209,6 @@ resource "aws_lb_listener" "ec2_alb_listener_80" {
   }
 }
 
-resource "aws_lb_target_group" "ec2_alb_target_group_443" {
-  name        = "${var.name_prefix}-target-group-443"
-  port        = 443
-  protocol    = "HTTP"
-  target_type = "instance"
-  vpc_id      = var.vpc_id
-  health_check {
-    path                = "/"
-    port                = "traffic-port"
-    protocol            = "HTTP"
-    healthy_threshold   = 3
-    unhealthy_threshold = 2
-    matcher             = "200-399"
-  }
-
-  tags = {
-    Name = "${var.name_prefix}-target-group-443"
-    Team = var.team
-  }
-}
-
-resource "aws_lb_target_group_attachment" "ec2_attachment_443" {
-  target_group_arn = aws_lb_target_group.ec2_alb_target_group_443.arn
-  target_id        = aws_instance.ec2.id
-  port             = 80
-}
-
 resource "aws_lb_listener" "ec2_alb_listener_443" {
   load_balancer_arn = aws_lb.ec2_alb.arn
   port              = 443
@@ -249,6 +218,12 @@ resource "aws_lb_listener" "ec2_alb_listener_443" {
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.ec2_alb_target_group_443.arn
+    target_group_arn = aws_lb_target_group.ec2_alb_target_group_80.arn
   }
+}
+
+resource "aws_lb_target_group_attachment" "ec2_attachment" {
+  target_group_arn = aws_lb_target_group.ec2_alb_target_group_80.arn
+  target_id        = aws_instance.ec2.id
+  port             = 80
 }
