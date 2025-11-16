@@ -195,12 +195,6 @@ Remote State는 S3 백엔드를 사용하며 다음 경로에서 읽어옵니다
    - Unhealthy Threshold: 2
    - Success Codes: 200-399
 
-2. **Target Group 443** (HTTPS)
-   - Health Check: `/` 경로
-   - Healthy Threshold: 3
-   - Unhealthy Threshold: 2
-   - Success Codes: 200-399
-
 ### 모듈 변수
 
 #### 필수 변수
