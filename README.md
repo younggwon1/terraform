@@ -115,7 +115,7 @@ Remote State는 S3 백엔드를 사용하며 다음 경로에서 읽어옵니다
 ### EC2 인스턴스 구성
 
 #### AMI
-- **AMI**: Amazon Linux 2023 (al2023-ami-2023.0.20230222.1-kernel-6.1-x86_64)
+- **AMI**: Amazon Linux 2023 (al2023-ami-*-kernel-6.1-x86_64)
 - **아키텍처**: x86_64
 
 #### User Data
