@@ -76,8 +76,8 @@ resource "aws_instance" "ec2" {
 
 ## IAM Role
 resource "aws_iam_role" "ec2" {
-  name_prefix               = "${var.name_prefix}-ec2-iam-role-"
-  assume_role_policy        = data.aws_iam_policy_document.ec2_assume_role.json
+  name_prefix        = "${var.name_prefix}-ec2-iam-role-"
+  assume_role_policy = data.aws_iam_policy_document.ec2_assume_role.json
 }
 
 data "aws_iam_policy_document" "ec2_assume_role" {
@@ -107,8 +107,8 @@ resource "aws_iam_instance_profile" "ec2_instance_profile" {
 
 ## Security Group
 resource "aws_security_group" "ec2_security_group" {
-  name_prefix   = "${var.name_prefix}-ec2-security-group"
-  vpc_id        = var.vpc_id
+  name_prefix = "${var.name_prefix}-ec2-security-group-"
+  vpc_id      = var.vpc_id
 
   ingress {
     description     = "Allow ingress traffic from ALB on HTTP on 80 ports"
@@ -127,8 +127,8 @@ resource "aws_security_group" "ec2_security_group" {
 }
 
 resource "aws_security_group" "alb_security_group" {
-  name_prefix   = "${var.name_prefix}-alb-security-group"
-  vpc_id        = var.vpc_id
+  name_prefix = "${var.name_prefix}-alb-security-group-"
+  vpc_id      = var.vpc_id
 
   ingress {
     from_port   = 80
@@ -159,7 +159,7 @@ resource "aws_security_group" "alb_security_group" {
 
 ## Application Load Balancer
 resource "aws_lb" "ec2_alb" {
-  name               = "${var.name_prefix}-ec2-alb"
+  name_prefix        = "${var.name_prefix}-ec2-alb-"
   internal           = false
   load_balancer_type = "application"
   subnets            = var.public_subnet_ids
@@ -176,7 +176,7 @@ resource "aws_lb" "ec2_alb" {
 }
 
 resource "aws_lb_target_group" "ec2_alb_target_group_80" {
-  name        = "${var.name_prefix}-target-group-80"
+  name_prefix = "${var.name_prefix}-target-group-80-"
   port        = 80
   protocol    = "HTTP"
   target_type = "instance"
