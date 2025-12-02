@@ -107,12 +107,6 @@ variable "node_launch_template_id" {
   default     = null
 }
 
-variable "alb_allowed_cidrs" {
-  description = "List of CIDR blocks allowed to access the public ALB"
-  type        = list(string)
-  default     = ["0.0.0.0/0"]
-}
-
 variable "additional_cluster_tags" {
   description = "Additional tags to apply to the EKS cluster and its resources"
   type        = map(string)

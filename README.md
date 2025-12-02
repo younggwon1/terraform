@@ -279,7 +279,6 @@ EC2 모듈을 배포하기 전에 다음 순서로 모듈을 배포해야 합니
 ### 아키텍처 개요
 - **Control Plane**: EKS 관리형 컨트롤 플레인 (퍼블릭/프라이빗 엔드포인트 설정 가능)
 - **Worker Nodes**: Private Subnet에 배치된 self-managed node group
-- **ALB**: Public Subnet에 위치한 ALB용 Security Group (`public-alb-sg`)과 연동
 
 ### 클러스터 설정
 - **이름**: `var.cluster_name` (기본값: `eks`)
@@ -319,14 +318,6 @@ EC2 모듈을 배포하기 전에 다음 순서로 모듈을 배포해야 합니
   - `cluster_admin`: `AmazonEKSClusterAdminPolicy` 부여 (전체 클러스터 관리자)
   - `cluster_viewer`: `AmazonEKSViewPolicy` 부여 (조회 전용)
   - 각각의 `principal_arn`은 `var.cluster_admin_role_arn`, `var.cluster_viewer_role_arn` 변수로 관리
-
-### ALB Security Group
-- 리소스: `aws_security_group.public-alb-sg`
-- 인바운드:
-  - 80, 443 포트를 `var.alb_allowed_cidrs` 리스트 기반으로 허용 (`for_each` 사용)
-  - 기본값은 `["0.0.0.0/0"]` 이지만, 운영 환경에서는 사내/VPN CIDR 등으로 좁혀서 사용 가능
-- 아웃바운드:
-  - 전체 트래픽 `0.0.0.0/0` 허용
 
 ### 태깅 전략
 - 기본 태그:
