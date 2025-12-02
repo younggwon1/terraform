@@ -44,6 +44,20 @@ One NAT Gateway per availability zone
 ### Internet Gateway
 > Internet Gateway를 통해 VPC 내의 리소스가 외부 인터넷과 통신할 수 있도록 create_igw = true 설정을 통해 생성합니다.
 
+### Flow Logs
+> VPC Flow Log를 선택적으로 활성화할 수 있도록 구성되어 있으며, CloudWatch Logs 및 IAM Role 생성 여부, 집계 간격, 트래픽 타입 등을 변수로 제어합니다.
+
+---
+
+## ACM 구성
+> 퍼블릭 호스트 존과 ACM 인증서를 생성하여 ALB 및 기타 서비스에서 사용할 수 있도록 구성합니다.
+
+- Route 53 퍼블릭 Hosted Zone 생성 (`aws_route53_zone.service`)
+- 와일드카드 SAN을 포함한 ACM 인증서 발급 (`aws_acm_certificate.alb_certificate`)
+- DNS 검증 레코드 자동 생성 및 검증 완료 리소스 (`aws_route53_record.certificate_validation`, `aws_acm_certificate_validation.alb_certificate`)
+
+ACM 모듈의 출력값(예: `acm_certificate_arn`)은 EC2, EKS 등에서 ALB/Listener 구성 시 참조할 수 있도록 Remote State로 읽어 사용합니다.
+
 ---
 
 ## EC2 구성
@@ -253,3 +267,72 @@ EC2 모듈을 배포하기 전에 다음 순서로 모듈을 배포해야 합니
 1. **Network 모듈** 배포
 2. **ACM 모듈** 배포 (인증서 생성)
 3. **EC2 모듈** 배포
+
+---
+
+## EKS 구성
+
+### 개요
+- `eks/` 모듈은 `terraform-aws-modules/eks/aws` **v21.10.1**을 사용하여 EKS 클러스터와 Self-managed Node Group, IRSA 기반 Cluster Autoscaler, ALB용 Security Group을 구성합니다.
+- VPC 및 Subnet 정보는 Network 모듈의 Remote State에서, 필요 시 ACM 정보는 ACM 모듈의 Remote State에서 참조합니다.
+
+### 아키텍처 개요
+- **Control Plane**: EKS 관리형 컨트롤 플레인 (퍼블릭/프라이빗 엔드포인트 설정 가능)
+- **Worker Nodes**: Private Subnet에 배치된 self-managed node group
+- **ALB**: Public Subnet에 위치한 ALB용 Security Group (`public-alb-sg`)과 연동
+
+### 클러스터 설정
+- **이름**: `var.cluster_name` (기본값: `eks`)
+- **버전**: `var.cluster_version` (기본값: `1.34`)
+- **엔드포인트 접근 제어**:
+  - `var.endpoint_public_access` (기본값: `false`)
+  - `var.endpoint_private_access` (기본값: `true`)
+- **애드온 관리**:
+  - `var.cluster_addons` 맵으로 `vpc-cni`, `kube-proxy`, `coredns` 버전 및 충돌 처리 전략(`resolve_conflicts_on_create`) 정의
+
+### Self-managed Node Group
+- **노드 그룹 이름**: `node` (self-managed)
+- **AMI 전략**:
+  - `var.node_ami_id`가 `null`이면 EKS 최적화 AMI(`AL2023_x86_64_STANDARD`) 사용
+  - 값이 설정되면 해당 Custom AMI로 노드 생성
+- **Launch Template 연동**:
+  - `var.use_custom_launch_template` (기본값: `false`)
+  - `var.node_launch_template_id`에 Launch Template ID를 넘기면, 커스텀 Launch Template 기반으로 노드 생성
+- **스케일 설정**:
+  - `var.node_min_size`, `var.node_max_size`, `var.node_desired_size`
+  - `var.node_instance_types` (기본값: `["m5.xlarge"]`)
+  - `var.node_disk_size` (기본값: `100GiB`)
+
+### IAM 및 IRSA
+- **컨트롤 플레인 IAM Role**:
+  - `aws_iam_role.eks-master` 및 `AmazonEKSClusterPolicy`, `AmazonEKSServicePolicy` 부여
+- **워커 노드 IAM Role**:
+  - `aws_iam_role.eks-worker` 에 `AmazonEKSWorkerNodePolicy`, `AmazonEKS_CNI_Policy`, `AmazonEC2ContainerRegistryPowerUser`, `AmazonSSMManagedInstanceCore` 부여
+- **Cluster Autoscaler (IRSA)**:
+  - `aws_iam_openid_connect_provider.eks` 로 OIDC Provider 생성
+  - OIDC `sub`가 `system:serviceaccount:kube-system:cluster-autoscaler-service` 인 서비스 어카운트에만 AssumeRole 허용
+  - Auto Scaling / EC2 / EKS 관련 권한을 갖는 전용 정책(`aws_iam_policy.eks-worker-autoscaler`)과 IAM Role(`aws_iam_role.eks-worker-autoscaler`) 구성
+  - 태그 조건(`kubernetes.io/cluster/${var.cluster_name}`, `k8s.io/cluster-autoscaler/enabled`) 기반으로 대상 리소스를 제한
+
+### EKS Access Entries (권한 관리)
+- `access_entries` 블록을 통해 EKS **Access Management** 기능을 활용:
+  - `cluster_admin`: `AmazonEKSClusterAdminPolicy` 부여 (전체 클러스터 관리자)
+  - `cluster_viewer`: `AmazonEKSViewPolicy` 부여 (조회 전용)
+  - 각각의 `principal_arn`은 `var.cluster_admin_role_arn`, `var.cluster_viewer_role_arn` 변수로 관리
+
+### ALB Security Group
+- 리소스: `aws_security_group.public-alb-sg`
+- 인바운드:
+  - 80, 443 포트를 `var.alb_allowed_cidrs` 리스트 기반으로 허용 (`for_each` 사용)
+  - 기본값은 `["0.0.0.0/0"]` 이지만, 운영 환경에서는 사내/VPN CIDR 등으로 좁혀서 사용 가능
+- 아웃바운드:
+  - 전체 트래픽 `0.0.0.0/0` 허용
+
+### 태깅 전략
+- 기본 태그:
+  - `"Resource" = "eks"`
+  - Cluster Autoscaler 인식용 태그:
+    - `"k8s.io/cluster-autoscaler/enabled" = "true"`
+    - `"k8s.io/cluster-autoscaler/${var.cluster_name}" = "true"`
+- 추가 태그:
+  - `var.additional_cluster_tags` 맵을 `merge()` 로 합쳐, 비용·조직·환경 태그를 환경별로 유연하게 설정 가능
