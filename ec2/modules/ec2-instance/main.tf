@@ -1,14 +1,66 @@
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
 locals {
-  user_data = <<-EOF
+  # Default user data with nginx and CloudWatch Agent
+  default_user_data = <<-EOF
   #cloud-config
   package_update: true
   packages:
     - nginx
+    ${var.enable_cloudwatch_agent ? "- amazon-cloudwatch-agent" : ""}
   runcmd:
     - [ bash, -lc, 'if ! systemctl is-enabled nginx >/dev/null 2>&1; then systemctl enable nginx; fi' ]
     - [ bash, -lc, 'if ! systemctl is-active nginx >/dev/null 2>&1; then systemctl start nginx; fi' ]
     - [ bash, -lc, 'echo "hello from terraform" > /usr/share/nginx/html/index.html' ]
+    ${var.enable_cloudwatch_agent ? <<-CWAGENT
+    - [ bash, -lc, 'cat >/opt/aws/amazon-cloudwatch-agent/bin/config.json <<\"CONFIG\"
+{
+  "metrics": {
+    "metrics_collected": {
+      "mem": {
+        "measurement": [
+          "mem_used_percent"
+        ]
+      },
+      "cpu": {
+        "measurement": [
+          "cpu_usage_idle",
+          "cpu_usage_system",
+          "cpu_usage_user"
+        ],
+        "totalcpu": true
+      }
+    },
+    "append_dimensions": {
+      "AutoScalingGroupName": "$${!aws:AutoScalingGroupName}",
+      "InstanceId": "$${!aws:InstanceId}",
+      "InstanceType": "$${!aws:InstanceType}"
+    }
+  }
+}
+CONFIG' ]
+    - [ bash, -lc, 'systemctl enable amazon-cloudwatch-agent' ]
+    - [ bash, -lc, 'systemctl restart amazon-cloudwatch-agent' ]
+    CWAGENT
+: ""}
   EOF
+
+# Use provided user_data if specified, otherwise use default
+# Priority: user_data_base64 > user_data > default_user_data
+user_data = var.user_data_base64 != "" ? var.user_data_base64 : (
+  var.user_data != "" ? var.user_data : local.default_user_data
+)
+
+# Common tags
+common_tags = merge(
+  {
+    Name = "${var.name_prefix}-instance"
+    Team = var.team
+  },
+  var.extra_tags
+)
 }
 
 data "aws_ami" "ec2" {
@@ -17,7 +69,7 @@ data "aws_ami" "ec2" {
 
   filter {
     name   = "name"
-    values = ["al2023-ami-*-kernel-6.1-x86_64"]
+    values = [var.ami_name_filter]
   }
 
   filter {
@@ -39,7 +91,9 @@ resource "aws_instance" "ec2" {
   monitoring                  = true
 
   credit_specification {
-    cpu_credits = startswith(var.instance_type, "t") ? "standard" : null
+    cpu_credits = var.cpu_credits != null ? var.cpu_credits : (
+      startswith(var.instance_type, "t") ? "standard" : null
+    )
   }
 
   metadata_options {
@@ -65,19 +119,15 @@ resource "aws_instance" "ec2" {
     delete_on_termination = false
   }
 
-  tags = merge(
-    {
-      Name = "${var.name_prefix}-instance"
-      Team = var.team
-    },
-    var.extra_tags
-  )
+  tags = local.common_tags
 }
 
 ## IAM Role
 resource "aws_iam_role" "ec2" {
-  name_prefix        = "${var.name_prefix}-ec2-iam-role-"
+  name               = "${var.name_prefix}-ec2-iam-role-${random_id.suffix.hex}"
   assume_role_policy = data.aws_iam_policy_document.ec2_assume_role.json
+
+  tags = local.common_tags
 }
 
 data "aws_iam_policy_document" "ec2_assume_role" {
@@ -101,13 +151,16 @@ resource "aws_iam_role_policy_attachment" "ec2_cloudwatch" {
 }
 
 resource "aws_iam_instance_profile" "ec2_instance_profile" {
-  name_prefix = "${var.name_prefix}-ec2-instance-profile-"
-  role        = aws_iam_role.ec2.name
+  name = "${var.name_prefix}-ec2-instance-profile-${random_id.suffix.hex}"
+  role = aws_iam_role.ec2.name
+
+  tags = local.common_tags
 }
 
 ## Security Group
 resource "aws_security_group" "ec2_security_group" {
-  name_prefix = "${var.name_prefix}-ec2-security-group-"
+  name        = "${var.name_prefix}-ec2-security-group-${random_id.suffix.hex}"
+  description = "Security group for EC2 instance"
   vpc_id      = var.vpc_id
 
   ingress {
@@ -119,18 +172,28 @@ resource "aws_security_group" "ec2_security_group" {
   }
 
   egress {
+    description = "Allow all outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.name_prefix}-ec2-sg"
+    }
+  )
 }
 
 resource "aws_security_group" "alb_security_group" {
-  name_prefix = "${var.name_prefix}-alb-security-group-"
+  name        = "${var.name_prefix}-alb-security-group-${random_id.suffix.hex}"
+  description = "Security group for ALB"
   vpc_id      = var.vpc_id
 
   ingress {
+    description = "Allow HTTP traffic from internet"
     from_port   = 80
     to_port     = 80
     protocol    = "TCP"
@@ -138,6 +201,7 @@ resource "aws_security_group" "alb_security_group" {
   }
 
   ingress {
+    description = "Allow HTTPS traffic from internet"
     from_port   = 443
     to_port     = 443
     protocol    = "TCP"
@@ -145,21 +209,24 @@ resource "aws_security_group" "alb_security_group" {
   }
 
   egress {
+    description = "Allow all outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
-    Name = "${var.name_prefix}-alb-sg"
-    Team = var.team
-  }
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.name_prefix}-alb-sg"
+    }
+  )
 }
 
 ## Application Load Balancer
 resource "aws_lb" "ec2_alb" {
-  name_prefix        = "${var.name_prefix}-ec2-alb-"
+  name               = "${var.name_prefix}-ec2-alb-${random_id.suffix.hex}"
   internal           = false
   load_balancer_type = "application"
   subnets            = var.public_subnet_ids
@@ -167,35 +234,40 @@ resource "aws_lb" "ec2_alb" {
     aws_security_group.alb_security_group.id,
   ]
 
-  enable_deletion_protection = true
+  enable_deletion_protection = var.enable_deletion_protection
 
-  tags = {
-    Name = "${var.name_prefix}-ec2-alb"
-    Team = var.team
-  }
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.name_prefix}-ec2-alb"
+    }
+  )
 }
 
 resource "aws_lb_target_group" "ec2_alb_target_group_80" {
-  name_prefix = "${var.name_prefix}-target-group-80-"
-  port        = 80
-  protocol    = "HTTP"
+  name        = "${var.name_prefix}-target-group-80-${random_id.suffix.hex}"
+  port        = var.health_check.port
+  protocol    = var.health_check.protocol
   target_type = "instance"
   vpc_id      = var.vpc_id
+
   health_check {
-    path                = "/"
+    path                = var.health_check.path
     port                = "traffic-port"
-    protocol            = "HTTP"
-    healthy_threshold   = 3
-    unhealthy_threshold = 2
-    interval            = 30
-    timeout             = 5
-    matcher             = "200-399"
+    protocol            = var.health_check.protocol
+    healthy_threshold   = var.health_check.healthy_threshold
+    unhealthy_threshold = var.health_check.unhealthy_threshold
+    interval            = var.health_check.interval
+    timeout             = var.health_check.timeout
+    matcher             = var.health_check.matcher
   }
 
-  tags = {
-    Name = "${var.name_prefix}-target-group-80"
-    Team = var.team
-  }
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.name_prefix}-target-group-80"
+    }
+  )
 }
 
 resource "aws_lb_listener" "ec2_alb_listener_80" {
@@ -218,7 +290,7 @@ resource "aws_lb_listener" "ec2_alb_listener_443" {
   load_balancer_arn = aws_lb.ec2_alb.arn
   port              = 443
   protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+  ssl_policy        = var.ssl_policy
   certificate_arn   = var.acm_certificate_arn
 
   default_action {

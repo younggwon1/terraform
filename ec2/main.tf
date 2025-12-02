@@ -47,8 +47,8 @@ module "ec2_t_type_instance" {
   root_volume_size    = 16
   ebs_volume_type     = "gp3"
   ebs_volume_size     = 32
-  ebs_iops            = 1000
-  ebs_throughput      = 50
+  ebs_iops            = 3000
+  ebs_throughput      = 125
   public_subnet_ids   = local.public_subnet_ids
   private_subnet_id   = local.private_subnet_ids[0]
   team                = "QA Team"
