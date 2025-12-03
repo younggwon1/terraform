@@ -2,13 +2,14 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "21.10.1"
 
-  vpc_id             = local.vpc_id
-  subnet_ids         = local.private_subnets_ids
-  name               = var.cluster_name
-  kubernetes_version = var.cluster_version
-  addons             = var.cluster_addons
-  create_iam_role    = false
-  iam_role_arn       = aws_iam_role.eks-master.arn
+  vpc_id              = local.vpc_id
+  subnet_ids          = local.private_subnets_ids
+  name                = var.cluster_name
+  kubernetes_version  = var.cluster_version
+  addons              = var.cluster_addons
+  deletion_protection = true
+  create_iam_role     = false
+  iam_role_arn        = aws_iam_role.eks-master.arn
 
   endpoint_public_access  = var.endpoint_public_access
   endpoint_private_access = var.endpoint_private_access
