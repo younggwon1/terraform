@@ -60,9 +60,9 @@ variable "cluster_addons" {
 }
 
 variable "node_instance_types" {
-  description = "Instance types for the self-managed worker node group"
+  description = "Instance types for the self-managed worker node group (used in mixed_instances_policy)"
   type        = list(string)
-  default     = ["m5.xlarge"]
+  default     = ["m5.xlarge", "m5a.xlarge", "m5d.xlarge"]
 }
 
 variable "node_min_size" {
@@ -111,4 +111,45 @@ variable "additional_cluster_tags" {
   description = "Additional tags to apply to the EKS cluster and its resources"
   type        = map(string)
   default     = {}
+}
+
+variable "mixed_instances_on_demand_base_capacity" {
+  description = "Minimum number of on-demand instances to maintain for stability"
+  type        = number
+  default     = 1
+}
+
+variable "mixed_instances_on_demand_percentage" {
+  description = "Percentage of on-demand instances above base capacity (0-100)"
+  type        = number
+  default     = 50
+  validation {
+    condition     = var.mixed_instances_on_demand_percentage >= 0 && var.mixed_instances_on_demand_percentage <= 100
+    error_message = "On-demand percentage must be between 0 and 100."
+  }
+}
+
+variable "mixed_instances_spot_pools" {
+  description = "Number of Spot instance pools to use (1-20). More pools increase availability but may increase cost."
+  type        = number
+  default     = 4
+  validation {
+    condition     = var.mixed_instances_spot_pools >= 1 && var.mixed_instances_spot_pools <= 20
+    error_message = "Spot pools must be between 1 and 20."
+  }
+}
+
+variable "mixed_instances_spot_max_price" {
+  description = "Maximum price per hour for Spot instances (empty string = on-demand price)"
+  type        = string
+  default     = ""
+}
+
+variable "mixed_instances_weights" {
+  description = "Weighted capacity for each instance type in mixed_instances_policy. Key is instance type, value is weight."
+  type        = map(number)
+  default = {
+    # 기본값: 모든 인스턴스 타입에 동일한 가중치 (1)
+    # 예: "m5.xlarge" = 1, "m5a.xlarge" = 1, "m5d.xlarge" = 1
+  }
 }

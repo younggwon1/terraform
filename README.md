@@ -276,31 +276,22 @@ EC2 모듈을 배포하기 전에 다음 순서로 모듈을 배포해야 합니
 - `eks/` 모듈은 `terraform-aws-modules/eks/aws` **v21.10.1**을 사용하여 EKS 클러스터와 Self-managed Node Group, IRSA 기반 Cluster Autoscaler, ALB용 Security Group을 구성합니다.
 - VPC 및 Subnet 정보는 Network 모듈의 Remote State에서, 필요 시 ACM 정보는 ACM 모듈의 Remote State에서 참조합니다.
 
-### 아키텍처 개요
-- **Control Plane**: EKS 관리형 컨트롤 플레인 (퍼블릭/프라이빗 엔드포인트 설정 가능)
-- **Worker Nodes**: Private Subnet에 배치된 self-managed node group
+### 클러스터 기본 설정
+- **이름/버전**: `var.cluster_name`(기본 `eks`), `var.cluster_version`(기본 `1.34`)
+- **엔드포인트 접근 제어**: 퍼블릭/프라이빗 토글(`var.endpoint_public_access`, `var.endpoint_private_access`)
+- **애드온**: `vpc-cni`, `kube-proxy`, `coredns` 버전을 `var.cluster_addons`로 관리
+- **삭제 보호**: `deletion_protection = true`
 
-### 클러스터 설정
-- **이름**: `var.cluster_name` (기본값: `eks`)
-- **버전**: `var.cluster_version` (기본값: `1.34`)
-- **엔드포인트 접근 제어**:
-  - `var.endpoint_public_access` (기본값: `false`)
-  - `var.endpoint_private_access` (기본값: `true`)
-- **애드온 관리**:
-  - `var.cluster_addons` 맵으로 `vpc-cni`, `kube-proxy`, `coredns` 버전 및 충돌 처리 전략(`resolve_conflicts_on_create`) 정의
-
-### Self-managed Node Group
-- **노드 그룹 이름**: `node` (self-managed)
-- **AMI 전략**:
-  - `var.node_ami_id`가 `null`이면 EKS 최적화 AMI(`AL2023_x86_64_STANDARD`) 사용
-  - 값이 설정되면 해당 Custom AMI로 노드 생성
-- **Launch Template 연동**:
-  - `var.use_custom_launch_template` (기본값: `false`)
-  - `var.node_launch_template_id`에 Launch Template ID를 넘기면, 커스텀 Launch Template 기반으로 노드 생성
-- **스케일 설정**:
-  - `var.node_min_size`, `var.node_max_size`, `var.node_desired_size`
-  - `var.node_instance_types` (기본값: `["m5.xlarge"]`)
-  - `var.node_disk_size` (기본값: `100GiB`)
+### Self-managed Node Group (커스텀 Launch Template + Mixed Instances)
+- **Launch Template**: 직접 정의한 `aws_launch_template.eks_worker`를 사용 (`use_custom_launch_template = true`, `$Latest` 버전 고정)
+  - IMDSv2 강제(`http_tokens="required"`), GP3 볼륨 암호화, EBS 최적화, 모니터링 활성화
+  - User Data로 `/etc/eks/bootstrap.sh <cluster_name>` 실행 + kubelet NodeConfig 적용
+- **Mixed Instances Policy**: 비용·가용성 최적화
+  - Launch Template 지정 + 인스턴스 타입 override ( `var.node_instance_types` / 가중치 `var.mixed_instances_weights`)
+  - 분배 전략: 온디맨드 기본 용량(`var.mixed_instances_on_demand_base_capacity`), 초과분 온디맨드 비율(`var.mixed_instances_on_demand_percentage`), 스팟 전략 `capacity-optimized`, 스팟 풀 수(`var.mixed_instances_spot_pools`), 스팟 상한가(`var.mixed_instances_spot_max_price`, 빈 문자열이면 온디맨드 가격)
+- **스케일 설정**: `min_size`, `max_size`, `desired_size`를 ASG 레벨에서 관리
+- **AMI 전략**: `var.node_ami_id`가 없으면 AL2023 EKS Optimized AMI 자동 조회(`data.aws_ami.eks_optimized`)
+- **태그**: 클러스터 소유/오토스케일러 인식 태그 포함
 
 ### IAM 및 IRSA
 - **컨트롤 플레인 IAM Role**:
