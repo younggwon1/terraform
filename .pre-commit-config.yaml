@@ -3,11 +3,20 @@ repos:
     rev: v1.104.0
     hooks:
       - id: terraform_fmt
+      - id: terraform_docs
+        args:
+          - --hook-config=--create-file-if-not-exist=true
+          - --args=--lockfile=false
       - id: terraform_validate
+        args:
+          - --hook-config=--retry-once-with-cleanup=true
       - id: terraform_tflint
         args:
-          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl --var-file __GIT_WORKING_DIR__/.github/lint/tflint.tfvars
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
       - id: terraform_trivy
         args:
+          - --hook-config=--parallelism-limit=1
           - --args=--format=json
+          - --args=--output=.trivy/trivy.json
+          - --args=--severity HIGH,CRITICAL
           - --args=--skip-dirs="**/.terraform"
