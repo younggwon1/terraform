@@ -7,17 +7,13 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "Asia/Seoul"
-
-    open-pull-requests-limit: 10
-
     labels:
       - "dependencies"
       - "terraform"
-
     commit-message:
       prefix: "dependabot(terraform)"
-
     # Major version 업데이트 PR은 자동 생성하지 않도록 제한 (수동 검토 유도)
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+    open-pull-requests-limit: 10
