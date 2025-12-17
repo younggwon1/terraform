@@ -11,12 +11,24 @@ resource "aws_security_group" "eks_worker" {
     self        = true
   }
 
+  # VPC 내부 통신 (RDS, MSK 등)
   egress {
-    description = "Allow all outbound traffic"
+    description = "Allow outbound to VPC internal services"
     from_port   = 0
-    to_port     = 0
+    to_port     = 65535
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [
+      local.vpc_cidr_block
+    ]
+  }
+
+  # 외부 통신 (제휴사 / 인터넷)
+  egress {
+    description = "Allow outbound HTTPS via NAT Gateway only"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = local.nat_gateway_cidrs
   }
 
   tags = {

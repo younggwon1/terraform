@@ -33,6 +33,11 @@ output "nat_gateway_ids" {
   value       = module.vpc.natgw_ids
 }
 
+output "nat_public_ips" {
+  description = "List of NAT Gateway Public IPs"
+  value       = module.vpc.nat_public_ips
+}
+
 ## Route Tables
 output "public_route_table_ids" {
   description = "List of IDs of public route tables"
