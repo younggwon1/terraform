@@ -4,7 +4,7 @@ locals {
   public_subnets_ids  = data.terraform_remote_state.network.outputs.public_subnets_ids
   private_subnets_ids = data.terraform_remote_state.network.outputs.private_subnets_ids
   nat_gateway_cidrs = [
-    for ip in data.terraform_remote_state.network.outputs.nat_public_ips :
-    "${ip}/32"
+    for nat_public_ip in data.terraform_remote_state.network.outputs.nat_public_ips :
+    "${nat_public_ip}/32"
   ]
 }
