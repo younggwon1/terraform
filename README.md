@@ -8,7 +8,7 @@
 ---
 
 ## Network 구성
-> 6.5.0 버전의 terraform-aws-modules/vpc/aws를 사용하여 VPC, Subnet, NAT, Internet Gateway를 구성
+> 6.5.1 버전의 terraform-aws-modules/vpc/aws를 사용하여 VPC, Subnet, NAT, Internet Gateway를 구성
 
 ### VPC IP CIDR blocks
 - VPC : 10.23.0.0/16 (10.23.0.0 ~ 10.23.255.255)
