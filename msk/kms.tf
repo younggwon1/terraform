@@ -59,7 +59,7 @@ resource "aws_kms_key_policy" "msk_kms_key_policy" {
         Resource = "${aws_kms_key.msk_kms_key.arn}"
         Condition = {
           StringEquals = {
-            "kms:ViaService"    = "kafka.${data.aws_region.current.name}.amazonaws.com"
+            "kms:ViaService"    = "kafka.${data.aws_region.current.id}.amazonaws.com"
             "kms:CallerAccount" = "${data.aws_caller_identity.current.account_id}"
           }
         }
@@ -68,7 +68,7 @@ resource "aws_kms_key_policy" "msk_kms_key_policy" {
         Sid    = "Allow use of the key for MSK service"
         Effect = "Allow"
         Principal = {
-          Service = "kafka.${data.aws_region.current.name}.amazonaws.com"
+          Service = "kafka.${data.aws_region.current.id}.amazonaws.com"
         },
         Action = [
           "kms:Encrypt",
@@ -81,7 +81,7 @@ resource "aws_kms_key_policy" "msk_kms_key_policy" {
         Resource = "${aws_kms_key.msk_kms_key.arn}"
         Condition = {
           StringEquals = {
-            "kms:ViaService"    = "kafka.${data.aws_region.current.name}.amazonaws.com"
+            "kms:ViaService"    = "kafka.${data.aws_region.current.id}.amazonaws.com"
             "kms:CallerAccount" = "${data.aws_caller_identity.current.account_id}"
           }
         }
