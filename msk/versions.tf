@@ -8,11 +8,11 @@ terraform {
     }
   }
 
-  # backend "s3" {
-  #   bucket       = "tf-remote-state"
-  #   key          = "ap-northeast-2.msk.tfstate"
-  #   region       = "ap-northeast-2"
-  #   use_lockfile = true
-  #   encrypt      = true
-  # }
+  backend "s3" {
+    bucket       = "tf-remote-state"
+    key          = "ap-northeast-2.msk.tfstate"
+    region       = "ap-northeast-2"
+    use_lockfile = true
+    encrypt      = true
+  }
 }
