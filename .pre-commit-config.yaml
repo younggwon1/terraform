@@ -1,18 +1,55 @@
-repos:
-  - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.104.0
-    hooks:
-      - id: terraform_fmt
-      - id: terraform_docs
+ ################################################################################
+ # Pre-commit Configuration for Terraform
+ # Documentation: https://github.com/antonbabenko/pre-commit-terraform
+ # Install: pre-commit install
+ # Run: pre-commit run --all-files
+ ################################################################################
+ 
+ repos:
+   ################################################################################
+   # Pre-commit Hooks
+   ################################################################################
+   - repo: https://github.com/pre-commit/pre-commit-hooks
+     rev: v6.0.0
+     hooks:
+       - id: check-merge-conflict
+       - id: end-of-file-fixer
+       - id: trailing-whitespace
+       - id: mixed-line-ending
+         args: [--fix=lf]
+       - id: check-yaml
+       - id: check-json
+ 
+   ################################################################################
+   # Terraform Hooks
+   ################################################################################
+   - repo: https://github.com/antonbabenko/pre-commit-terraform
+     rev: v1.105.0
+     hooks:
+       # Format Terraform files
+       - id: terraform_fmt
+         args:
+           - --args=-recursive=true
+ 
+       # Generate Terraform documentation
+       - id: terraform_docs
         args:
           - --hook-config=--create-file-if-not-exist=true
           - --args=--lockfile=false
-      - id: terraform_validate
-        args:
-          - --hook-config=--retry-once-with-cleanup=true
-      - id: terraform_tflint
-        args:
-          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+
+       # Validate Terraform files
+       - id: terraform_validate
+         args:
+           - --hook-config=--retry-once-with-cleanup=true
+ 
+       # Run TFLint
+       - id: terraform_tflint
+         args:
+           - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+           - --args=--recursive
+           - --args=--format=compact
+
+      # Run Trivy
       - id: terraform_trivy
         args:
           - --hook-config=--parallelism-limit=1
