@@ -56,6 +56,10 @@ variable "cluster_addons" {
       addon_version               = "v1.12.4-eksbuild.1"
       resolve_conflicts_on_create = "OVERWRITE"
     }
+    "aws-ebs-csi-driver" = {
+      addon_version               = "v1.47.0-eksbuild.1"
+      resolve_conflicts_on_create = "OVERWRITE"
+    }
   }
 }
 
