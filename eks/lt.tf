@@ -39,23 +39,6 @@ resource "aws_launch_template" "eks_worker" {
   }
 
   user_data = base64encode(<<-EOT
-MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="==MYBOUNDARY=="
-
---==MYBOUNDARY==
-Content-Type: text/x-shellscript; charset="us-ascii"
-
-#!/bin/bash
-set -o errexit
-set -o pipefail
-set -o nounset
-
-# EKS 클러스터 부트스트랩 (클러스터 이름만 지정하면 자동으로 엔드포인트와 CA를 찾습니다)
-/etc/eks/bootstrap.sh ${var.cluster_name}
-
---==MYBOUNDARY==
-Content-Type: application/node.eks.aws; charset="us-ascii"
-
 ---
 apiVersion: node.eks.aws/v1alpha1
 kind: NodeConfig
@@ -66,7 +49,6 @@ spec:
       shutdownGracePeriodCriticalPods: 10s
     flags:
       - "--node-labels=node.kubernetes.io/name=node"
---==MYBOUNDARY==--
 EOT
   )
 
