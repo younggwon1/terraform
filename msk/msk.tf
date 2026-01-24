@@ -155,11 +155,11 @@ resource "aws_msk_cluster" "msk" {
 
   # IMPORTANT: Terraform lifecycle blocks do not support variables or any expressions.
   # They only accept literal boolean values (true or false).
-  # 
+  #
   # To control prevent_destroy behavior:
   # - For production: Set prevent_destroy = true (default, protects against accidental deletion)
   # - For non-production: Set prevent_destroy = false or remove this lifecycle block
-  # 
+  #
   # To delete a protected resource, you must:
   # 1. Manually edit this file and set prevent_destroy = false
   # 2. Run terraform apply to update the lifecycle

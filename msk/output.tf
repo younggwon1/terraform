@@ -92,4 +92,3 @@ output "msk_configuration_latest_revision" {
   description = "Latest revision of the MSK configuration"
   value       = aws_msk_configuration.msk_configuration.latest_revision
 }
-

@@ -45,19 +45,19 @@ variable "cluster_addons" {
 
   default = {
     "vpc-cni" = {
-      addon_version               = "v1.20.3-eksbuild.1"
+      addon_version               = "v1.21.1-eksbuild.1"
       resolve_conflicts_on_create = "OVERWRITE"
     }
     "kube-proxy" = {
-      addon_version               = "v1.34.0-eksbuild.4"
+      addon_version               = "v1.34.1-eksbuild.2"
       resolve_conflicts_on_create = "OVERWRITE"
     }
     "coredns" = {
-      addon_version               = "v1.12.4-eksbuild.1"
+      addon_version               = "v1.12.4-eksbuild.6"
       resolve_conflicts_on_create = "OVERWRITE"
     }
     "aws-ebs-csi-driver" = {
-      addon_version               = "v1.47.0-eksbuild.1"
+      addon_version               = "v1.54.0-eksbuild.1"
       resolve_conflicts_on_create = "OVERWRITE"
     }
   }

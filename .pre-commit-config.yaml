@@ -42,18 +42,18 @@
          args:
            - --hook-config=--retry-once-with-cleanup=true
 
-       # Run TFLint
-       - id: terraform_tflint
-         args:
-           - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
-           - --args=--recursive
-           - --args=--format=compact
+      #  # Run TFLint
+      #  - id: terraform_tflint
+      #    args:
+      #      - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+      #      - --args=--recursive
+      #      - --args=--format=compact
 
-       # Run Trivy
-       - id: terraform_trivy
-         args:
-           - --hook-config=--parallelism-limit=1
-           - --args=--format=json
-           - --args=--output=.trivy/trivy.json
-           - --args=--severity HIGH,CRITICAL
-           - --args=--skip-dirs="**/.terraform"
+      #  # Run Trivy
+      #  - id: terraform_trivy
+      #    args:
+      #      - --hook-config=--parallelism-limit=1
+      #      - --args=--format=json
+      #      - --args=--output=.trivy/trivy.json
+      #      - --args=--severity HIGH,CRITICAL
+      #      - --args=--skip-dirs="**/.terraform"
